@@ -40,7 +40,7 @@ var RATING_OPTIONS = [
 
 function getInfo() {
   return { name: ADULT ? 'MangaDex 18+' : 'MangaDex', lang: 'multi', baseUrl: SITE,
-           logo: SITE + '/favicon.ico', type: 'manga', version: '1.2.0' };
+           logo: SITE + '/favicon.ico', type: 'manga', version: '1.3.0' };
 }
 
 function getSettings() {
@@ -48,6 +48,8 @@ function getSettings() {
     { key: 'langs', label: 'Ngôn ngữ bản dịch', type: 'multiEnum', default: DEFAULT_LANGS, options: LANG_OPTIONS },
     { key: 'ratings', label: 'Mức nội dung hiển thị', type: 'multiEnum',
       default: DEFAULT_RATINGS, options: RATING_OPTIONS },
+    { key: 'viFirst', label: 'Ưu tiên chương tiếng Việt (ẩn bản ngôn ngữ khác trùng số chương)',
+      type: 'bool', default: true },
     { key: 'dataSaver', label: 'Tiết kiệm dữ liệu (ảnh nén)', type: 'bool', default: false }
   ];
 }
@@ -193,12 +195,32 @@ function _status(s) {
   return { ongoing: 'ongoing', completed: 'completed', hiatus: 'hiatus', cancelled: 'cancelled' }[s] || 'unknown';
 }
 
+function _hasVi(m) {
+  var langs = (m.attributes && m.attributes.availableTranslatedLanguages) || [];
+  return langs.indexOf('vi') !== -1;
+}
+
 function _item(m) {
   var t = _titles(m);
+  // dubBadge is the corner tag Zangetsu draws on a poster — used here to
+  // flag titles that have a Vietnamese translation.
   return { id: m.id, title: t.title, englishTitle: t.english, url: SITE + '/title/' + m.id,
            cover: _cover(m, 256), genres: _tagNames(m).slice(0, 5),
            status: _status(m.attributes && m.attributes.status),
+           dubBadge: _hasVi(m) ? '🇻🇳 VI' : null,
            type: 'manga', sourceId: SOURCE_ID };
+}
+
+// Mixed-language lists: titles with a Vietnamese translation first, order
+// otherwise unchanged.
+function _viFirst(items) {
+  return items.filter(function (i) { return i.dubBadge; })
+    .concat(items.filter(function (i) { return !i.dubBadge; }));
+}
+
+function _multiLang() {
+  var l = _langs();
+  return l.length > 1 && l.indexOf('vi') !== -1;
 }
 
 function _mangaId(url) {
@@ -267,6 +289,38 @@ var SHELVES = [
   { title: 'Mới thêm', order: 'createdAt' }
 ];
 
+// Shown above everything else when the reader picked Vietnamese plus other
+// languages: the same lists restricted to titles that have a Vietnamese
+// translation, so those don't drown among the English-only ones.
+var VI_SHELVES = [
+  { title: '🇻🇳 Phổ biến (tiếng Việt)', order: 'followedCount' },
+  { title: '🇻🇳 Mới cập nhật (tiếng Việt)', order: 'latestUploadedChapter' },
+  { title: '🇻🇳 Đánh giá cao (tiếng Việt)', order: 'rating' }
+];
+
+// Genre rows for the 18+ install — the themes adult titles actually use,
+// instead of the all-ages list (sports, cooking…).
+var ADULT_GENRES = ['Tình cảm', 'Công sở', 'Học đường', 'Hài hước', 'Chính kịch', 'Giả tưởng',
+                    'Xuyên không', 'Harem', 'Quái vật', 'Ma cà rồng', 'Đời thường', 'Siêu nhiên',
+                    'Tâm lý', 'Phiêu lưu', 'Boys\' Love', 'Girls\' Love'];
+
+function _homeGenres() {
+  if (!ADULT) return GENRES.slice(0, HOME_GENRES);
+  return ADULT_GENRES.map(function (name) {
+    for (var i = 0; i < GENRES.length; i++) if (GENRES[i][0] === name) return GENRES[i];
+    return null;
+  }).filter(Boolean);
+}
+
+var VI_ONLY = { 'availableTranslatedLanguage[]': ['vi'] };
+
+function _merge(a, b) {
+  var o = {}, k;
+  for (k in a || {}) if (a.hasOwnProperty(k)) o[k] = a[k];
+  for (k in b || {}) if (b.hasOwnProperty(k)) o[k] = b[k];
+  return o;
+}
+
 // Zangetsu shows a JS source's home rows as-is, with no "see all" paging,
 // so the home is made big instead: four 100-title lists plus one 100-title
 // row per main genre. Fetched three at a time to stay under MangaDex's rate
@@ -278,10 +332,17 @@ var HOME_BUDGET_MS = 20000;
 function getHome(opts) {
   var deadline = Date.now() + HOME_BUDGET_MS;
   return _tags().then(function (tags) {
-    var jobs = SHELVES.map(function (s) {
-      return { title: s.title, run: function () { return _list(s.order, 1, null, HOME_ROW_SIZE); } };
+    var jobs = [];
+    // Vietnamese rows go first so they're never the ones the time budget drops.
+    if (_multiLang()) {
+      VI_SHELVES.forEach(function (s) {
+        jobs.push({ title: s.title, run: function () { return _list(s.order, 1, VI_ONLY, HOME_ROW_SIZE); } });
+      });
+    }
+    SHELVES.forEach(function (s) {
+      jobs.push({ title: s.title, run: function () { return _list(s.order, 1, null, HOME_ROW_SIZE); } });
     });
-    GENRES.slice(0, HOME_GENRES).forEach(function (g) {
+    _homeGenres().forEach(function (g) {
       var id = tags.byName[g[1]];
       if (!id) return;
       jobs.push({ title: g[0], run: function () {
@@ -316,8 +377,18 @@ function search(query, page, opts) {
   var q = String(query || '').trim();
   if (q) _lastQuery = q;
   else if (page > 1) q = _lastQuery;
+  // A trailing " vi" (or the 🇻🇳 flag) keeps only titles with a Vietnamese
+  // translation: "* vi", "#tình cảm vi", "🇻🇳".
+  var vi = false;
+  if (/(^|\s)(vi|🇻🇳)$/i.test(q) && q.length > 2 || q === '🇻🇳') {
+    vi = true;
+    q = q.replace(/\s*(vi|🇻🇳)$/i, '').trim() || '*';
+  }
+  var only = vi ? VI_ONLY : null;
   // "*" (or "tất cả") browses the whole catalogue, most followed first.
-  if (!q || q === '*' || _norm(q) === 'tất cả' || _norm(q) === 'all') return popular({ page: page });
+  if (!q || q === '*' || _norm(q) === 'tất cả' || _norm(q) === 'all') {
+    return _list('followedCount', page, only);
+  }
   // A pasted MangaDex link or id opens that title directly.
   if (/[0-9a-f]{8}-[0-9a-f]{4}-/i.test(q)) {
     if (page > 1) return Promise.resolve([]);
@@ -329,10 +400,12 @@ function search(query, page, opts) {
     return _tags().then(function (tags) {
       var id = _genreTagId(q, tags);
       if (!id) throw new Error('MangaDex: không có thể loại "' + q.slice(1).trim() + '"');
-      return _list('followedCount', page, { 'includedTags[]': [id] });
+      return _list('followedCount', page, _merge({ 'includedTags[]': [id] }, only));
     });
   }
-  return _list('relevance', page, { title: q });
+  return _list('relevance', page, _merge({ title: q }, only)).then(function (items) {
+    return _multiLang() ? _viFirst(items) : items;
+  });
 }
 
 // ── detail + chapters ──────────────────────────────────────────────────────
@@ -374,6 +447,16 @@ function _chapters(id) {
       var a = c.attributes || {};
       return !a.externalUrl && (a.pages == null || a.pages > 0);
     });
+    var multi = _langs().length > 1;
+    // With "ưu tiên tiếng Việt" on, a chapter number that has a Vietnamese
+    // release shows only that; other languages just fill the gaps.
+    if (multi && _langs().indexOf('vi') !== -1 && _setting('viFirst', true) === true) {
+      var viNums = {};
+      rows.forEach(function (c) { if (c.attributes.translatedLanguage === 'vi') viNums[c.attributes.chapter || '_'] = true; });
+      rows = rows.filter(function (c) {
+        return c.attributes.translatedLanguage === 'vi' || !viNums[c.attributes.chapter || '_'];
+      });
+    }
     var count = {};
     rows.forEach(function (c) { var k = c.attributes.chapter || '_'; count[k] = (count[k] || 0) + 1; });
     var out = rows.map(function (c) {
@@ -381,7 +464,10 @@ function _chapters(id) {
       var g = _rel(c, 'scanlation_group');
       var group = g && g.attributes && g.attributes.name;
       var num = parseFloat(a.chapter);
-      return { id: c.id, title: _chapterTitle(a, group, count[a.chapter || '_'] > 1),
+      var title = _chapterTitle(a, group, count[a.chapter || '_'] > 1);
+      // Mark the language whenever more than one is in play.
+      if (multi && a.translatedLanguage) title = (a.translatedLanguage === 'vi' ? '🇻🇳 ' : '[' + a.translatedLanguage.toUpperCase() + '] ') + title;
+      return { id: c.id, title: title,
                number: isNaN(num) ? null : num, url: SITE + '/chapter/' + c.id,
                date: (a.readableAt || a.publishAt || '').slice(0, 10) || null };
     });
@@ -389,7 +475,9 @@ function _chapters(id) {
       if (x.number == null && y.number == null) return 0;
       if (x.number == null) return 1;
       if (y.number == null) return -1;
-      return x.number - y.number;
+      if (x.number !== y.number) return x.number - y.number;
+      // Same chapter in several languages: Vietnamese first.
+      return (y.title.indexOf('🇻🇳') === 0) - (x.title.indexOf('🇻🇳') === 0);
     });
     return out;
   });

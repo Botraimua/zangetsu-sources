@@ -29,7 +29,13 @@ Các file `.js` phải nằm cùng thư mục với `index.json`, vì app ghép 
   vì truyện 18+ có bản dịch tiếng Việt rất ít.
 - *Mức nội dung hiển thị*: MangaDex mặc định An toàn + Gợi cảm; MangaDex 18+ mặc định
   Nhạy cảm (18+) + Người lớn (21+).
+- *Ưu tiên chương tiếng Việt* (mặc định bật): chương nào có bản tiếng Việt thì chỉ hiện bản đó,
+  bản tiếng Anh chỉ lấp các chương còn thiếu. Khi chọn từ 2 ngôn ngữ, chương được gắn 🇻🇳 hoặc [EN].
 - *Tiết kiệm dữ liệu*: dùng ảnh nén khi đi 4G.
+- Khi chọn tiếng Việt cùng ngôn ngữ khác, trang chủ có thêm 3 kệ **🇻🇳 … (tiếng Việt)** ở trên cùng.
+  Truyện có bản dịch tiếng Việt hiện tên tiếng Việt (nếu có) và nhãn **🇻🇳 VI** ở góc bìa
+  (cần bật huy hiệu trên ảnh bìa trong cài đặt của app).
+- MangaDex 18+ có bộ kệ thể loại riêng: Tình cảm, Công sở, Học đường, Harem, Quái vật…
 - Ở mọi mức, truyện gắn tag Loli/Shota đều bị loại. Nguồn không có tuỳ chọn tắt bộ lọc này.
 - Dán link `mangadex.org/title/...` vào ô tìm kiếm để mở thẳng truyện đó.
 - Không đặt `"nsfw": true` cho MangaDex 18+ trong `index.json`: app xếp nguồn có cờ nsfw vào
@@ -51,7 +57,8 @@ Muốn xem hết thì dùng **ô tìm kiếm bên trong nguồn**, cuộn xuốn
 |---|---|
 | `*` (hoặc `tất cả`) | Toàn bộ kho, truyện phổ biến trước |
 | `#tình cảm`, `#hành động`, `#xuyên không`, `#Romance`… | Toàn bộ một thể loại (MangaDex) |
-| Tên truyện / tác giả | Tất cả kết quả, cuộn để tải thêm |
+| Tên truyện / tác giả | Tất cả kết quả, cuộn để tải thêm (MangaDex: truyện có tiếng Việt xếp trước) |
+| `* vi`, `#tình cảm vi`, `🇻🇳` | Như trên nhưng **chỉ truyện có bản tiếng Việt** (MangaDex) |
 
 Thể loại tiếng Việt có sẵn cho MangaDex: tình cảm, hành động, hài hước, giả tưởng, xuyên không,
 chính kịch, đời thường, học đường, phiêu lưu, trinh thám, kinh dị, tâm lý, khoa học viễn tưởng,
