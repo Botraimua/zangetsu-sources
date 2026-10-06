@@ -5,7 +5,7 @@
     {
       "id": "mangadex",
       "name": "MangaDex",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "type": "manga",
       "lang": "multi",
       "file": "mangadex.js",
@@ -15,7 +15,7 @@
     {
       "id": "mangadex-18",
       "name": "MangaDex 18+",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "type": "manga",
       "lang": "multi",
       "file": "mangadex.js",
@@ -25,7 +25,7 @@
     {
       "id": "wikisource-vi",
       "name": "Wikisource Tiếng Việt",
-      "version": "1.1.0",
+      "version": "1.2.0",
       "type": "novel",
       "lang": "vi",
       "file": "wikisource-vi.js",
@@ -34,7 +34,7 @@
     {
       "id": "gutenberg",
       "name": "Project Gutenberg (sách ngoại văn)",
-      "version": "1.0.1",
+      "version": "1.1.0",
       "type": "novel",
       "lang": "en",
       "file": "gutenberg.js",

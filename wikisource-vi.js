@@ -7,20 +7,33 @@ var SITE = 'https://vi.wikisource.org';
 var API = SITE + '/w/api.php';
 var UA = 'ZangetsuSources/1.0 (personal reader; https://github.com/Spyou/Zangetsu)';
 var PAGE_SIZE = 30;
+// Zangetsu shows a JS source's home rows as-is with no "see all" paging, so
+// each row carries enough to hold the whole category (the prose categories
+// here are all under 60 works).
+var HOME_ROW_SIZE = 60;
 
 // Category-backed shelves. Every listing goes through CirrusSearch with
 // `incategory:` so paging is a plain offset, not a continuation token.
 var SHELVES = [
-  { title: 'Tác phẩm chọn lọc', cat: 'Tác phẩm chọn lọc' },
   { title: 'Tiểu thuyết', cat: 'Tiểu thuyết' },
   { title: 'Truyện ngắn', cat: 'Truyện ngắn' },
-  { title: 'Truyện thơ', cat: 'Truyện thơ' }
+  { title: 'Văn học Việt Nam', cat: 'Văn học Việt Nam' },
+  { title: 'Phóng sự', cat: 'Phóng sự' },
+  { title: 'Truyện Nôm', cat: 'Truyện Nôm' },
+  { title: 'Truyện thơ', cat: 'Truyện thơ' },
+  { title: 'Tác phẩm chọn lọc', cat: 'Tác phẩm chọn lọc' },
+  { title: 'Thơ lục bát', cat: 'Lục bát' },
+  { title: 'Thơ Việt Nam', cat: 'Thơ Việt Nam' }
 ];
+
+// Every prose shelf at once — what "*" pages through (CirrusSearch ORs
+// categories joined by "|").
+var ALL_PROSE = 'incategory:Tiểu_thuyết|Truyện_ngắn|Văn_học_Việt_Nam|Phóng_sự|Truyện_Nôm|Truyện_thơ|Tác_phẩm_chọn_lọc';
 
 function getInfo() {
   return { name: 'Wikisource Tiếng Việt', lang: 'vi', baseUrl: SITE,
            logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Wikisource-logo.svg/200px-Wikisource-logo.svg.png',
-           type: 'novel', version: '1.1.0' };
+           type: 'novel', version: '1.2.0' };
 }
 
 // ── helpers ────────────────────────────────────────────────────────────────
@@ -95,10 +108,11 @@ function _itemsFromSearch(j) {
   return out;
 }
 
-function _searchPage(srsearch, page) {
+function _searchPage(srsearch, page, size) {
   page = page > 0 ? page : 1;
+  size = size || PAGE_SIZE;
   return _api({ action: 'query', list: 'search', srsearch: srsearch, srnamespace: '0',
-                srlimit: String(PAGE_SIZE), sroffset: String((page - 1) * PAGE_SIZE),
+                srlimit: String(size), sroffset: String((page - 1) * size),
                 srprop: '' })
     .then(_itemsFromSearch)
     .then(_withCovers);
@@ -129,8 +143,17 @@ var WIKIPEDIA_API = 'https://vi.wikipedia.org/w/api.php';
 // title we asked for. Never rejects: a failed lookup just means no image.
 function _pageImages(api, titles) {
   if (!titles.length) return Promise.resolve({});
+  // The API takes at most 50 titles per call; batch the rest one after another.
+  if (titles.length > 50) {
+    return _pageImages(api, titles.slice(0, 50)).then(function (a) {
+      return _pageImages(api, titles.slice(50)).then(function (b) {
+        for (var k in b) if (b.hasOwnProperty(k)) a[k] = b[k];
+        return a;
+      });
+    });
+  }
   var q = { action: 'query', prop: 'pageimages', piprop: 'thumbnail', pithumbsize: '300', pilimit: '50',
-            redirects: '1', titles: titles.slice(0, 50).join('|'), format: 'json', formatversion: '2' };
+            redirects: '1', titles: titles.join('|'), format: 'json', formatversion: '2' };
   return _get(api + '?' + _qs(q)).then(function (r) {
     var j = JSON.parse(r.body || '{}').query || {};
     var back = {};
@@ -240,7 +263,7 @@ function getHome(opts) {
   var rows = [];
   return SHELVES.reduce(function (chain, s) {
     return chain.then(function () {
-      return _searchPage('incategory:"' + s.cat + '"', 1)
+      return _searchPage('incategory:"' + s.cat + '"', 1, HOME_ROW_SIZE)
         .then(function (items) { if (items.length) rows.push({ title: s.title, items: items }); },
               function () {});
     });
@@ -248,13 +271,20 @@ function getHome(opts) {
 }
 
 function popular(opts) {
-  var page = (opts && opts.page) || 1;
-  return _searchPage('incategory:"' + SHELVES[0].cat + '"', page);
+  return _searchPage(ALL_PROSE, (opts && opts.page) || 1);
 }
 
+// Zangetsu asks for search page 2, 3… with an EMPTY query (it doesn't keep
+// the query between pages), so remember the last one and keep paging it.
+var _lastQuery = '';
+
 function search(query, page, opts) {
+  page = page > 0 ? page : 1;
   var q = String(query || '').trim();
-  if (!q) return popular({ page: page });
+  if (q) _lastQuery = q;
+  else if (page > 1) q = _lastQuery;
+  // "*" (or "tất cả") pages through every prose work.
+  if (!q || q === '*' || /^(tất cả|all)$/i.test(q)) return popular({ page: page });
   // Exact-phrase title matches first, then the phrase anywhere (catches an
   // author's name in the work header). Much of the wiki is legislation,
   // which would otherwise bury the literature — drop it.

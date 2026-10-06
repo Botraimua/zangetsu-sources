@@ -23,12 +23,18 @@ var SHELVES = [
   { title: 'Trinh thám', q: 'detective' },
   { title: 'Phiêu lưu', q: 'adventure' },
   { title: 'Khoa học viễn tưởng', q: 'science fiction' },
-  { title: 'Thiếu nhi', q: 'children' }
+  { title: 'Thiếu nhi', q: 'children' },
+  { title: 'Lãng mạn', q: 'love stories' },
+  { title: 'Kinh dị', q: 'horror' },
+  { title: 'Lịch sử', q: 'historical fiction' },
+  { title: 'Kịch', q: 'drama' },
+  { title: 'Thơ', q: 'poetry' },
+  { title: 'Triết học', q: 'philosophy' }
 ];
 
 function getInfo() {
   return { name: 'Project Gutenberg (sách ngoại văn)', lang: 'en', baseUrl: SITE,
-           logo: SITE + '/gutenberg/pg-logo-129x80.png', type: 'novel', version: '1.0.1' };
+           logo: SITE + '/gutenberg/pg-logo-129x80.png', type: 'novel', version: '1.1.0' };
 }
 
 function getSettings() {
@@ -192,10 +198,25 @@ function _split(html, base) {
 
 // ── catalogue ──────────────────────────────────────────────────────────────
 
+// Zangetsu shows a JS source's home rows as-is with no "see all" paging, so
+// each row pulls several feed pages (25 books each) one after another.
+var HOME_PAGES = 3;
+
+function _feedPages(q, n) {
+  var all = [], seen = {};
+  function step(p) {
+    if (p > n) return Promise.resolve(all);
+    return _feed(q, p).then(function (items) {
+      items.forEach(function (it) { if (!seen[it.id]) { seen[it.id] = true; all.push(it); } });
+      return items.length ? step(p + 1) : all;
+    }, function () { return all; });
+  }
+  return step(1);
+}
+
 function getHome(opts) {
   return Promise.all(SHELVES.map(function (s) {
-    return _feed(s.q, 1).then(function (items) { return { title: s.title, items: items }; },
-                              function () { return { title: s.title, items: [] }; });
+    return _feedPages(s.q, HOME_PAGES).then(function (items) { return { title: s.title, items: items }; });
   })).then(function (rows) { return rows.filter(function (r) { return r.items.length; }); });
 }
 
@@ -203,8 +224,18 @@ function popular(opts) {
   return _feed('', (opts && opts.page) || 1);
 }
 
+// Zangetsu asks for search page 2, 3… with an EMPTY query (it doesn't keep
+// the query between pages), so remember the last one and keep paging it.
+var _lastQuery = '';
+
 function search(query, page, opts) {
-  return _feed(query, page);
+  page = page > 0 ? page : 1;
+  var q = String(query || '').trim();
+  if (q) _lastQuery = q;
+  else if (page > 1) q = _lastQuery;
+  // "*" (or "tất cả") pages through the whole catalogue, most downloaded first.
+  if (q === '*' || /^(tất cả|all)$/i.test(q)) q = '';
+  return _feed(q, page);
 }
 
 function getDetail(url) {

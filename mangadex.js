@@ -40,7 +40,7 @@ var RATING_OPTIONS = [
 
 function getInfo() {
   return { name: ADULT ? 'MangaDex 18+' : 'MangaDex', lang: 'multi', baseUrl: SITE,
-           logo: SITE + '/favicon.ico', type: 'manga', version: '1.1.0' };
+           logo: SITE + '/favicon.ico', type: 'manga', version: '1.2.0' };
 }
 
 function getSettings() {
@@ -111,17 +111,27 @@ function _api(path, params) {
 // Tag ids are looked up by name once per runtime, not hard-coded, so a
 // renamed/reissued tag can't silently disable the filter. Results are also
 // filtered client-side by tag name as a second line of defence.
-var _blockedTagIds = null;
+// The same lookup also gives the genre rows and "#thể loại" browsing their
+// tag ids, keyed by lower-case English name.
+var _tagCache = null;
+
+function _tags() {
+  if (_tagCache) return Promise.resolve(_tagCache);
+  return _api('/manga/tag').then(function (j) {
+    var byName = {}, blocked = [];
+    (j.data || []).forEach(function (t) {
+      var n = String((t.attributes && t.attributes.name && t.attributes.name.en) || '').toLowerCase();
+      if (!n) return;
+      byName[n] = t.id;
+      if (BLOCKED_TAGS.indexOf(n) !== -1) blocked.push(t.id);
+    });
+    _tagCache = { byName: byName, blocked: blocked };
+    return _tagCache;
+  }, function () { return { byName: {}, blocked: [] }; });
+}
 
 function _excludedTags() {
-  if (_blockedTagIds) return Promise.resolve(_blockedTagIds);
-  return _api('/manga/tag').then(function (j) {
-    _blockedTagIds = (j.data || []).filter(function (t) {
-      var n = String((t.attributes && t.attributes.name && t.attributes.name.en) || '').toLowerCase();
-      return BLOCKED_TAGS.indexOf(n) !== -1;
-    }).map(function (t) { return t.id; });
-    return _blockedTagIds;
-  }, function () { return []; });
+  return _tags().then(function (t) { return t.blocked; });
 }
 
 function _hasBlockedTag(m) {
@@ -199,11 +209,14 @@ function _mangaId(url) {
 
 // ── catalogue ──────────────────────────────────────────────────────────────
 
-function _list(order, page, extra) {
+var HOME_ROW_SIZE = 100;   // MangaDex's per-request maximum
+
+function _list(order, page, extra, size) {
   page = page > 0 ? page : 1;
+  size = size || PAGE_SIZE;
   return _excludedTags().then(function (excluded) {
     var p = {
-      limit: String(PAGE_SIZE), offset: String((page - 1) * PAGE_SIZE),
+      limit: String(size), offset: String((page - 1) * size),
       'includes[]': ['cover_art'],
       'contentRating[]': _ratings(),
       'availableTranslatedLanguage[]': _langs(),
@@ -212,10 +225,39 @@ function _list(order, page, extra) {
     if (excluded.length) { p['excludedTags[]'] = excluded; p.excludedTagsMode = 'OR'; }
     p['order[' + order + ']'] = 'desc';
     for (var k in extra || {}) if (extra.hasOwnProperty(k)) p[k] = extra[k];
+    // offset + limit may not exceed 10 000 on MangaDex — that's the end.
+    if ((page - 1) * size + size > 10000) return { data: [] };
     return _api('/manga', p);
   }).then(function (j) {
     return (j.data || []).filter(function (m) { return !_hasBlockedTag(m); }).map(_item);
   });
+}
+
+// Vietnamese genre names → MangaDex tag (English name). Used for the home
+// rows and for "#thể loại" searches; English tag names work as-is too.
+var GENRES = [
+  ['Tình cảm', 'romance'], ['Hành động', 'action'], ['Hài hước', 'comedy'], ['Giả tưởng', 'fantasy'],
+  ['Xuyên không', 'isekai'], ['Chính kịch', 'drama'], ['Đời thường', 'slice of life'],
+  ['Học đường', 'school life'], ['Phiêu lưu', 'adventure'], ['Trinh thám', 'mystery'],
+  ['Kinh dị', 'horror'], ['Tâm lý', 'psychological'], ['Khoa học viễn tưởng', 'sci-fi'],
+  ['Lịch sử', 'historical'], ['Thể thao', 'sports'], ['Siêu nhiên', 'supernatural'],
+  ['Võ thuật', 'martial arts'], ['Bi kịch', 'tragedy'], ['Harem', 'harem'],
+  ['Công sở', 'office workers'], ['Quái vật', 'monster girls'], ['Ma cà rồng', 'vampires'],
+  ['Phép thuật', 'magic'], ['Trò chơi', 'video games'], ['Nấu ăn', 'cooking'],
+  ['Boys\' Love', 'boys\' love'], ['Girls\' Love', 'girls\' love']
+];
+
+function _norm(s) {
+  return String(s || '').toLowerCase().normalize('NFC').replace(/^#\s*/, '').trim();
+}
+
+// "#tình cảm", "#Romance", "#romance" → tag id (null when unknown).
+function _genreTagId(q, tags) {
+  var n = _norm(q);
+  for (var i = 0; i < GENRES.length; i++) {
+    if (_norm(GENRES[i][0]) === n) n = GENRES[i][1];
+  }
+  return tags.byName[n] || null;
 }
 
 var SHELVES = [
@@ -225,17 +267,39 @@ var SHELVES = [
   { title: 'Mới thêm', order: 'createdAt' }
 ];
 
+// Zangetsu shows a JS source's home rows as-is, with no "see all" paging,
+// so the home is made big instead: four 100-title lists plus one 100-title
+// row per main genre. Fetched three at a time to stay under MangaDex's rate
+// limit, and cut off after HOME_BUDGET_MS so the app's 30 s getHome timeout
+// never throws the finished rows away.
+var HOME_GENRES = 16;
+var HOME_BUDGET_MS = 20000;
+
 function getHome(opts) {
-  // Sequential on purpose: MangaDex rate-limits bursts (~5 req/s).
-  var rows = [];
-  return SHELVES.reduce(function (chain, s) {
-    return chain.then(function () {
-      return _list(s.order, 1).then(function (items) { rows.push({ title: s.title, items: items }); },
-                                    function () {});
+  var deadline = Date.now() + HOME_BUDGET_MS;
+  return _tags().then(function (tags) {
+    var jobs = SHELVES.map(function (s) {
+      return { title: s.title, run: function () { return _list(s.order, 1, null, HOME_ROW_SIZE); } };
     });
-  }, Promise.resolve()).then(function () {
-    if (!rows.length) return _list('followedCount', 1).then(function () { return rows; }); // surface the error
-    return rows.filter(function (r) { return r.items.length; });
+    GENRES.slice(0, HOME_GENRES).forEach(function (g) {
+      var id = tags.byName[g[1]];
+      if (!id) return;
+      jobs.push({ title: g[0], run: function () {
+        return _list('followedCount', 1, { 'includedTags[]': [id] }, HOME_ROW_SIZE);
+      } });
+    });
+    var rows = new Array(jobs.length), next = 0;
+    function worker() {
+      if (next >= jobs.length || Date.now() > deadline) return Promise.resolve();
+      var i = next++;
+      return jobs[i].run().then(function (items) { rows[i] = { title: jobs[i].title, items: items }; },
+                                function () {}).then(worker);
+    }
+    return Promise.all([worker(), worker(), worker()]).then(function () {
+      var out = rows.filter(function (r) { return r && r.items.length; });
+      if (!out.length) return _list('followedCount', 1).then(function () { return out; }); // surface the error
+      return out;
+    });
   });
 }
 
@@ -243,13 +307,30 @@ function popular(opts) {
   return _list('followedCount', (opts && opts.page) || 1);
 }
 
+// Zangetsu asks for search page 2, 3… with an EMPTY query (it doesn't keep
+// the query between pages), so remember the last one and keep paging it.
+var _lastQuery = '';
+
 function search(query, page, opts) {
+  page = page > 0 ? page : 1;
   var q = String(query || '').trim();
-  if (!q) return popular({ page: page });
+  if (q) _lastQuery = q;
+  else if (page > 1) q = _lastQuery;
+  // "*" (or "tất cả") browses the whole catalogue, most followed first.
+  if (!q || q === '*' || _norm(q) === 'tất cả' || _norm(q) === 'all') return popular({ page: page });
   // A pasted MangaDex link or id opens that title directly.
   if (/[0-9a-f]{8}-[0-9a-f]{4}-/i.test(q)) {
+    if (page > 1) return Promise.resolve([]);
     return _api('/manga/' + _mangaId(q), { 'includes[]': ['cover_art'] })
       .then(function (j) { return _hasBlockedTag(j.data) || !_ratingAllowed(j.data) ? [] : [_item(j.data)]; });
+  }
+  // "#thể loại" browses every title in that genre.
+  if (q.charAt(0) === '#') {
+    return _tags().then(function (tags) {
+      var id = _genreTagId(q, tags);
+      if (!id) throw new Error('MangaDex: không có thể loại "' + q.slice(1).trim() + '"');
+      return _list('followedCount', page, { 'includedTags[]': [id] });
+    });
   }
   return _list('relevance', page, { title: q });
 }

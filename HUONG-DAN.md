@@ -41,6 +41,23 @@ không có ảnh thì dùng bìa chữ tự tạo (tên truyện trên nền mà
 **Project Gutenberg**: *Ngôn ngữ sách*, mặc định English. Gutenberg gần như không có sách
 tiếng Việt; truyện chữ tiếng Việt hợp pháp nằm ở nguồn Wikisource.
 
+## Xem hết truyện của một nguồn
+
+Zangetsu không có nút "Xem tất cả" cho kệ của nguồn JavaScript, nên mỗi kệ trên trang
+chủ chỉ có số truyện nguồn trả về (MangaDex 100/kệ, Wikisource tới 60/kệ, Gutenberg 75/kệ).
+Muốn xem hết thì dùng **ô tìm kiếm bên trong nguồn**, cuộn xuống để tải tiếp:
+
+| Gõ | Kết quả |
+|---|---|
+| `*` (hoặc `tất cả`) | Toàn bộ kho, truyện phổ biến trước |
+| `#tình cảm`, `#hành động`, `#xuyên không`, `#Romance`… | Toàn bộ một thể loại (MangaDex) |
+| Tên truyện / tác giả | Tất cả kết quả, cuộn để tải thêm |
+
+Thể loại tiếng Việt có sẵn cho MangaDex: tình cảm, hành động, hài hước, giả tưởng, xuyên không,
+chính kịch, đời thường, học đường, phiêu lưu, trinh thám, kinh dị, tâm lý, khoa học viễn tưởng,
+lịch sử, thể thao, siêu nhiên, võ thuật, bi kịch, harem, công sở, quái vật, ma cà rồng, phép thuật,
+trò chơi, nấu ăn. Tên tag tiếng Anh của MangaDex cũng gõ được (`#Romance`, `#Ecchi`…).
+
 ## Lưu ý về mạng ở Việt Nam
 
 MangaDex bị nhà mạng chặn (DNS trả về địa chỉ giả, kết nối bị ngắt giữa chừng). Trên
