@@ -20,7 +20,7 @@ var SHELVES = [
 function getInfo() {
   return { name: 'Wikisource Tiếng Việt', lang: 'vi', baseUrl: SITE,
            logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Wikisource-logo.svg/200px-Wikisource-logo.svg.png',
-           type: 'novel', version: '1.0.0' };
+           type: 'novel', version: '1.1.0' };
 }
 
 // ── helpers ────────────────────────────────────────────────────────────────
@@ -35,10 +35,23 @@ function _qs(params) {
   return out.join('&');
 }
 
+function _sleep(ms) { return new Promise(function (res) { setTimeout(res, ms); }); }
+
+// Wikimedia answers 503/429 when it's busy; one retry after a short pause
+// clears almost all of them.
+function _get(url, retried) {
+  return fetch(url, { headers: { 'User-Agent': UA } }).then(function (r) {
+    if ((r.status === 503 || r.status === 429) && !retried) {
+      return _sleep(1500).then(function () { return _get(url, true); });
+    }
+    return r;
+  });
+}
+
 function _api(params) {
   params.format = 'json';
   params.formatversion = '2';
-  return fetch(API + '?' + _qs(params), { headers: { 'User-Agent': UA } })
+  return _get(API + '?' + _qs(params))
     .then(function (r) {
       if (!r.ok) throw new Error('Wikisource: HTTP ' + r.status);
       var j;
@@ -75,7 +88,7 @@ function _itemsFromSearch(j) {
   var seen = {}, out = [];
   for (var i = 0; i < hits.length; i++) {
     var t = _root(hits[i].title);
-    if (seen[t]) continue;
+    if (seen[t] || LEGAL.test(t)) continue;
     seen[t] = true;
     out.push(_item(t));
   }
@@ -91,21 +104,65 @@ function _searchPage(srsearch, page) {
     .then(_withCovers);
 }
 
-// One batched pageimages call per listing. Most works have no image; those
-// keep cover:null and the app draws its placeholder.
+// Covers, best first: the Wikisource page's own image, then the Vietnamese
+// Wikipedia article about the work, then a generated title card. Only a
+// handful of works have a real image, so the card is the common case.
 function _withCovers(items) {
-  if (!items.length) return items;
-  return _api({ action: 'query', prop: 'pageimages', piprop: 'thumbnail', pithumbsize: '300',
-                pilimit: '50', titles: items.map(function (i) { return i.title; }).join('|') })
-    .then(function (j) {
-      var byTitle = {};
-      var pages = (j && j.query && j.query.pages) || [];
-      for (var i = 0; i < pages.length; i++) {
-        if (pages[i].thumbnail) byTitle[pages[i].title] = pages[i].thumbnail.source;
-      }
-      items.forEach(function (it) { if (byTitle[it.title]) it.cover = byTitle[it.title]; });
-      return items;
-    }, function () { return items; });
+  if (!items.length) return Promise.resolve(items);
+  var titles = items.map(function (i) { return i.title; });
+  return _pageImages(API, titles).then(function (ws) {
+    var missing = items.filter(function (it) { return !ws[it.title]; });
+    var wikiTitle = function (t) { return t.replace(/\s*\([^)]*\)\s*$/, ''); };
+    return _pageImages(WIKIPEDIA_API, missing.map(function (it) { return wikiTitle(it.title); }))
+      .then(function (wp) {
+        items.forEach(function (it) {
+          it.cover = ws[it.title] || wp[wikiTitle(it.title)] || _titleCard(it.title);
+        });
+        return items;
+      });
+  });
+}
+
+var WIKIPEDIA_API = 'https://vi.wikipedia.org/w/api.php';
+
+// title → thumbnail url, following redirects/normalisation back to the
+// title we asked for. Never rejects: a failed lookup just means no image.
+function _pageImages(api, titles) {
+  if (!titles.length) return Promise.resolve({});
+  var q = { action: 'query', prop: 'pageimages', piprop: 'thumbnail', pithumbsize: '300', pilimit: '50',
+            redirects: '1', titles: titles.slice(0, 50).join('|'), format: 'json', formatversion: '2' };
+  return _get(api + '?' + _qs(q)).then(function (r) {
+    var j = JSON.parse(r.body || '{}').query || {};
+    var back = {};
+    (j.normalized || []).concat(j.redirects || []).forEach(function (n) { back[n.to] = back[n.from] || n.from; });
+    var out = {};
+    (j.pages || []).forEach(function (p) {
+      if (!p.thumbnail) return;
+      out[p.title] = p.thumbnail.source;
+      if (back[p.title]) out[back[p.title]] = p.thumbnail.source;
+    });
+    return out;
+  }).catch(function () { return {}; });
+}
+
+var CARD_COLORS = [['7a2e2e', 'f5e6c8'], ['1f3a5f', 'e8eef5'], ['2f5233', 'eef3e2'], ['4a3b6b', 'efe9f7'],
+                   ['5c4033', 'f3e9dc'], ['0f4c5c', 'e3f2f1'], ['6b2d5c', 'f7e8f1'], ['3d3d3d', 'f0f0f0']];
+
+// Generated cover: the title on a colour picked from the title, so a work
+// keeps the same card everywhere. placehold.co renders Vietnamese with Roboto.
+function _titleCard(title) {
+  var t = String(title).replace(/\s*\([^)]*\)\s*$/, '');
+  var h = 0;
+  for (var i = 0; i < t.length; i++) h = (h * 31 + t.charCodeAt(i)) >>> 0;
+  var c = CARD_COLORS[h % CARD_COLORS.length];
+  // Break into ~14-character lines; the service draws "\n" as a line break.
+  var words = t.split(/\s+/), lines = [], cur = '';
+  words.forEach(function (w) {
+    if (cur && (cur + ' ' + w).length > 14) { lines.push(cur); cur = w; } else { cur = cur ? cur + ' ' + w : w; }
+  });
+  if (cur) lines.push(cur);
+  var text = lines.slice(0, 6).join('\\n');
+  return 'https://placehold.co/300x450/' + c[0] + '/' + c[1] + '/png?font=roboto&text=' + encodeURIComponent(text);
 }
 
 // Removes every <tag ...> block whose opening tag matches attrRe, including
@@ -179,13 +236,15 @@ function _chapterLinks(html, root) {
 // ── catalogue ──────────────────────────────────────────────────────────────
 
 function getHome(opts) {
-  return Promise.all(SHELVES.map(function (s) {
-    return _searchPage('incategory:"' + s.cat + '"', 1)
-      .then(function (items) { return { title: s.title, items: items }; },
-            function () { return { title: s.title, items: [] }; });
-  })).then(function (rows) {
-    return rows.filter(function (r) { return r.items.length > 0; });
-  });
+  // One shelf at a time: Wikimedia asks clients not to fire requests in parallel.
+  var rows = [];
+  return SHELVES.reduce(function (chain, s) {
+    return chain.then(function () {
+      return _searchPage('incategory:"' + s.cat + '"', 1)
+        .then(function (items) { if (items.length) rows.push({ title: s.title, items: items }); },
+              function () {});
+    });
+  }, Promise.resolve()).then(function () { return rows; });
 }
 
 function popular(opts) {
@@ -259,13 +318,17 @@ function getDetail(url) {
       return !/^(\d+%|PVCC|PD|Trang |Tác phẩm|Văn kiện|Tác giả|Bảo quản|Bài |Sách có)/.test(g);
     });
 
-    return {
+    var detail = {
       id: realTitle, title: realTitle, url: _pageUrl(realTitle),
       cover: (page && page.thumbnail && page.thumbnail.source) || null,
       description: desc.join('\n'), status: 'completed', genres: genres,
       studios: author ? [author] : [], year: year || null,
       type: 'novel', sourceId: SOURCE_ID, chapters: chapters
     };
+    if (detail.cover) return detail;
+    // Same Wikipedia → title-card fallback the listings use, so the detail
+    // page shows the cover the grid showed.
+    return _withCovers([{ title: realTitle }]).then(function (r) { detail.cover = r[0].cover; return detail; });
   });
 }
 

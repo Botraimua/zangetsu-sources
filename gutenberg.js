@@ -27,8 +27,8 @@ var SHELVES = [
 ];
 
 function getInfo() {
-  return { name: 'Project Gutenberg', lang: 'en', baseUrl: SITE,
-           logo: SITE + '/gutenberg/pg-logo-129x80.png', type: 'novel', version: '1.0.0' };
+  return { name: 'Project Gutenberg (sách ngoại văn)', lang: 'en', baseUrl: SITE,
+           logo: SITE + '/gutenberg/pg-logo-129x80.png', type: 'novel', version: '1.0.1' };
 }
 
 function getSettings() {

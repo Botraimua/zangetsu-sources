@@ -7,6 +7,12 @@
 // Ở mọi mức, truyện gắn tag Loli hoặc Shota đều bị loại.
 
 var SOURCE_ID = 'mangadex';
+// The same file is installed twice from index.json: "mangadex" (all ages)
+// and "mangadex-18" (adult only). The runtime id picks the defaults.
+var RUNTIME_ID = typeof __SOURCE_ID !== 'undefined' ? __SOURCE_ID : SOURCE_ID;
+var ADULT = /18/.test(RUNTIME_ID);
+var DEFAULT_LANGS = ADULT ? ['vi', 'en'] : ['vi'];
+var DEFAULT_RATINGS = ADULT ? ['erotica', 'pornographic'] : ['safe', 'suggestive'];
 var SITE = 'https://mangadex.org';
 var API = 'https://api.mangadex.org';
 var UA = 'ZangetsuSources/1.0 (personal reader; https://github.com/Spyou/Zangetsu)';
@@ -33,15 +39,15 @@ var RATING_OPTIONS = [
 ];
 
 function getInfo() {
-  return { name: 'MangaDex', lang: 'multi', baseUrl: SITE,
-           logo: SITE + '/favicon.ico', type: 'manga', version: '1.0.0' };
+  return { name: ADULT ? 'MangaDex 18+' : 'MangaDex', lang: 'multi', baseUrl: SITE,
+           logo: SITE + '/favicon.ico', type: 'manga', version: '1.1.0' };
 }
 
 function getSettings() {
   return [
-    { key: 'langs', label: 'Ngôn ngữ bản dịch', type: 'multiEnum', default: ['vi'], options: LANG_OPTIONS },
+    { key: 'langs', label: 'Ngôn ngữ bản dịch', type: 'multiEnum', default: DEFAULT_LANGS, options: LANG_OPTIONS },
     { key: 'ratings', label: 'Mức nội dung hiển thị', type: 'multiEnum',
-      default: ['safe', 'suggestive'], options: RATING_OPTIONS },
+      default: DEFAULT_RATINGS, options: RATING_OPTIONS },
     { key: 'dataSaver', label: 'Tiết kiệm dữ liệu (ảnh nén)', type: 'bool', default: false }
   ];
 }
@@ -51,7 +57,8 @@ function getSettings() {
 function _setting(key, dflt) {
   try {
     var all = globalThis.__settings || {};
-    var mine = all[typeof __SOURCE_ID !== 'undefined' ? __SOURCE_ID : SOURCE_ID] || all[SOURCE_ID] || {};
+    // Own id only — the 18+ install must not inherit the all-ages settings.
+    var mine = all[RUNTIME_ID] || {};
     var v = mine[key];
     if (v == null || v === '') return dflt;
     if (Array.isArray(dflt)) {
@@ -62,8 +69,8 @@ function _setting(key, dflt) {
   } catch (e) { return dflt; }
 }
 
-function _langs() { return _setting('langs', ['vi']); }
-function _ratings() { return _setting('ratings', ['safe', 'suggestive']); }
+function _langs() { return _setting('langs', DEFAULT_LANGS); }
+function _ratings() { return _setting('ratings', DEFAULT_RATINGS); }
 
 // ── http ───────────────────────────────────────────────────────────────────
 

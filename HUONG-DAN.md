@@ -6,9 +6,10 @@ JavaScript riêng của Zangetsu**. Bộ này viết theo đúng định dạng 
 
 | Nguồn | Loại | Nội dung | Đã chạy thử |
 |---|---|---|---|
-| **MangaDex** | Truyện tranh | Manga/manhwa do nhóm dịch đăng; có tiếng Việt; có mức 18+/21+ | Logic: có (dữ liệu giả lập). Mạng thật: **chưa**, vì nhà mạng VN chặn MangaDex |
+| **MangaDex** | Truyện tranh | Manga/manhwa do nhóm dịch đăng, mọi lứa tuổi; mặc định tiếng Việt | Logic: có (dữ liệu giả lập). Mạng thật: **chưa**, vì nhà mạng VN chặn MangaDex |
+| **MangaDex 18+** | Truyện tranh | Chỉ truyện 18+/21+; mặc định tiếng Việt + English | Như trên |
 | **Wikisource Tiếng Việt** | Truyện chữ | Văn học VN thuộc phạm vi công cộng: Nam Cao, Hồ Biểu Chánh, Tam quốc, Truyện Kiều… | Có |
-| **Project Gutenberg** | Truyện chữ | 70.000+ sách kinh điển (Anh, Pháp, Đức, Trung…) | Có |
+| **Project Gutenberg (sách ngoại văn)** | Truyện chữ | 70.000+ sách kinh điển tiếng Anh, Pháp, Đức, Trung… (**không có sách tiếng Việt**) | Có |
 
 ## Cài vào app
 
@@ -23,15 +24,22 @@ Các file `.js` phải nằm cùng thư mục với `index.json`, vì app ghép 
 
 ## Cài đặt từng nguồn (bấm vào nguồn → Settings)
 
-**MangaDex**
-- *Ngôn ngữ bản dịch*: mặc định Tiếng Việt. Thêm English sẽ có nhiều truyện hơn.
-- *Mức nội dung hiển thị*: mặc định An toàn + Gợi cảm. Muốn xem 18+/21+ thì
-  tích thêm **Nhạy cảm (18+)** và **Người lớn (21+)**.
+**MangaDex / MangaDex 18+** (hai nguồn dùng chung file `mangadex.js`, cài đặt riêng từng nguồn)
+- *Ngôn ngữ bản dịch*: MangaDex mặc định Tiếng Việt; MangaDex 18+ mặc định Tiếng Việt + English,
+  vì truyện 18+ có bản dịch tiếng Việt rất ít.
+- *Mức nội dung hiển thị*: MangaDex mặc định An toàn + Gợi cảm; MangaDex 18+ mặc định
+  Nhạy cảm (18+) + Người lớn (21+).
 - *Tiết kiệm dữ liệu*: dùng ảnh nén khi đi 4G.
 - Ở mọi mức, truyện gắn tag Loli/Shota đều bị loại. Nguồn không có tuỳ chọn tắt bộ lọc này.
 - Dán link `mangadex.org/title/...` vào ô tìm kiếm để mở thẳng truyện đó.
+- Không đặt `"nsfw": true` cho MangaDex 18+ trong `index.json`: app xếp nguồn có cờ nsfw vào
+  nhóm NSFW của chế độ xem phim, nên nguồn sẽ không hiện ở chế độ Manga.
 
-**Project Gutenberg**: *Ngôn ngữ sách*, mặc định English.
+**Wikisource Tiếng Việt**: bìa lấy từ ảnh Wikisource, rồi đến ảnh bài Wikipedia; tác phẩm
+không có ảnh thì dùng bìa chữ tự tạo (tên truyện trên nền màu, qua placehold.co).
+
+**Project Gutenberg**: *Ngôn ngữ sách*, mặc định English. Gutenberg gần như không có sách
+tiếng Việt; truyện chữ tiếng Việt hợp pháp nằm ở nguồn Wikisource.
 
 ## Lưu ý về mạng ở Việt Nam
 
