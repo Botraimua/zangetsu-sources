@@ -1,0 +1,34 @@
+{
+  "name": "Nguồn đọc của chị Lập",
+  "description": "Truyện tranh (MangaDex) và truyện chữ (Wikisource tiếng Việt, Project Gutenberg) cho Zangetsu — chạy được trên iOS.",
+  "sources": [
+    {
+      "id": "mangadex",
+      "name": "MangaDex",
+      "version": "1.0.0",
+      "type": "manga",
+      "lang": "multi",
+      "file": "mangadex.js",
+      "logo": "https://mangadex.org/favicon.ico",
+      "nsfw": false
+    },
+    {
+      "id": "wikisource-vi",
+      "name": "Wikisource Tiếng Việt",
+      "version": "1.0.0",
+      "type": "novel",
+      "lang": "vi",
+      "file": "wikisource-vi.js",
+      "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Wikisource-logo.svg/200px-Wikisource-logo.svg.png"
+    },
+    {
+      "id": "gutenberg",
+      "name": "Project Gutenberg",
+      "version": "1.0.0",
+      "type": "novel",
+      "lang": "en",
+      "file": "gutenberg.js",
+      "logo": "https://www.gutenberg.org/gutenberg/pg-logo-129x80.png"
+    }
+  ]
+}
