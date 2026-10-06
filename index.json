@@ -23,6 +23,16 @@
       "nsfw": false
     },
     {
+      "id": "oglaf",
+      "name": "Oglaf (18+)",
+      "version": "1.0.0",
+      "type": "manga",
+      "lang": "en",
+      "file": "oglaf.js",
+      "logo": "https://static.oglaf.com/favicon.png",
+      "nsfw": false
+    },
+    {
       "id": "wikisource-vi",
       "name": "Wikisource Tiếng Việt",
       "version": "1.2.0",

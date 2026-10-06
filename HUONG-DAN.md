@@ -8,6 +8,7 @@ JavaScript riêng của Zangetsu**. Bộ này viết theo đúng định dạng 
 |---|---|---|---|
 | **MangaDex** | Truyện tranh | Manga/manhwa do nhóm dịch đăng, mọi lứa tuổi; mặc định tiếng Việt | Logic: có (dữ liệu giả lập). Mạng thật: **chưa**, vì nhà mạng VN chặn MangaDex |
 | **MangaDex 18+** | Truyện tranh | Chỉ truyện 18+/21+; mặc định tiếng Việt + English | Như trên |
+| **Oglaf (18+)** | Truyện tranh | Webcomic 18+ tiếng Anh (giả tưởng, hài người lớn) do chính tác giả Trudy Cooper & Doug Bayne đăng miễn phí; ~870 truyện ngắn | Có |
 | **Wikisource Tiếng Việt** | Truyện chữ | Văn học VN thuộc phạm vi công cộng: Nam Cao, Hồ Biểu Chánh, Tam quốc, Truyện Kiều… | Có |
 | **Project Gutenberg (sách ngoại văn)** | Truyện chữ | 70.000+ sách kinh điển tiếng Anh, Pháp, Đức, Trung… (**không có sách tiếng Việt**) | Có |
 
@@ -40,6 +41,10 @@ Các file `.js` phải nằm cùng thư mục với `index.json`, vì app ghép 
 - Dán link `mangadex.org/title/...` vào ô tìm kiếm để mở thẳng truyện đó.
 - Không đặt `"nsfw": true` cho MangaDex 18+ trong `index.json`: app xếp nguồn có cờ nsfw vào
   nhóm NSFW của chế độ xem phim, nên nguồn sẽ không hiện ở chế độ Manga.
+
+**Oglaf (18+)**: kệ "Đọc trọn bộ" là cả bộ gộp làm một (mỗi truyện ngắn là một chương, từ cũ
+đến mới); các kệ khác mở từng truyện riêng. Tên truyện ở danh sách lấy theo đường dẫn (vd. "Goodideas"),
+mở truyện ra mới thấy tên thật và câu đùa ẩn của tác giả. Không bị nhà mạng chặn, không cần VPN.
 
 **Wikisource Tiếng Việt**: bìa lấy từ ảnh Wikisource, rồi đến ảnh bài Wikipedia; tác phẩm
 không có ảnh thì dùng bìa chữ tự tạo (tên truyện trên nền màu, qua placehold.co).
