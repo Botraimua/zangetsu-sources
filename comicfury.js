@@ -12,7 +12,7 @@ var BLOCKED = /\b(loli|lolicon|shota|shotacon|cub|underage|under ?age|minor|mino
 
 function getInfo() {
   return { name: 'ComicFury 18+', lang: 'en', baseUrl: SITE,
-           logo: SITE + '/images/cf-diamond.png', type: 'manga', version: '1.0.0' };
+           logo: SITE + '/images/cf-diamond.png', type: 'manga', version: '1.1.0' };
 }
 
 function getSettings() {
@@ -58,9 +58,9 @@ function _profile(slug) { return SITE + '/comicprofile.php?url=' + slug; }
 
 // One page of ComicFury search (30 results), parsed and filtered to the
 // sexual-content level and length chosen in settings.
-function _searchPage(query, sort, page) {
+function _searchPage(query, sort, page, extra) {
   var url = SITE + '/search.php?vr=1&combinedquery=' + encodeURIComponent(query) +
-            '&sort=' + sort + '&fs=2&fn=2&fv=2&fl=2' + (page > 1 ? '&page=' + page : '');
+            '&sort=' + sort + '&fs=2&fn=2&fv=2&fl=2' + (extra || '') + (page > 1 ? '&page=' + page : '');
   return _html(url).then(function (html) {
     var level = parseInt(_setting('level', '2'), 10);
     var minPages = parseInt(_setting('minPages', '10'), 10);
@@ -87,29 +87,45 @@ function _searchPage(query, sort, page) {
 
 var SORT_RELEVANCE = 0, SORT_POPULAR = 1, SORT_UPDATED = 2;
 
+// `pages`: result pages (30 titles each) per row. The first rows get two;
+// the genre rows one, so the whole home stays inside the time budget.
 var SHELVES = [
-  { title: 'Phổ biến', q: '#nsfw', sort: SORT_POPULAR },
-  { title: 'Mới cập nhật', q: '#nsfw', sort: SORT_UPDATED },
-  { title: 'Tình cảm', q: '#nsfw #romance', sort: SORT_POPULAR },
-  { title: 'Giả tưởng', q: '#nsfw #fantasy', sort: SORT_POPULAR },
-  { title: 'Hài hước', q: '#nsfw #comedy', sort: SORT_POPULAR },
-  { title: 'Quái vật', q: '#nsfw #monster', sort: SORT_POPULAR },
-  { title: 'Boys\' Love', q: '#yaoi', sort: SORT_POPULAR },
-  { title: 'Girls\' Love', q: '#yuri', sort: SORT_POPULAR },
-  { title: 'Erotic', q: '#erotic', sort: SORT_POPULAR },
-  { title: 'Hentai', q: '#hentai', sort: SORT_POPULAR }
+  { title: 'Phổ biến', q: '#nsfw', sort: SORT_POPULAR, pages: 2 },
+  { title: 'Mới cập nhật', q: '#nsfw', sort: SORT_UPDATED, pages: 2 },
+  { title: 'Đã hoàn thành', q: '#nsfw', sort: SORT_POPULAR, pages: 1, extra: '&lastupdate=4' },
+  { title: 'Tình cảm', q: '#nsfw #romance', sort: SORT_POPULAR, pages: 2 },
+  { title: 'Giả tưởng', q: '#nsfw #fantasy', sort: SORT_POPULAR, pages: 2 },
+  { title: 'Hài hước', q: '#nsfw #comedy', sort: SORT_POPULAR, pages: 1 },
+  { title: 'Chính kịch', q: '#nsfw #drama', sort: SORT_POPULAR, pages: 1 },
+  { title: 'Hành động', q: '#nsfw #action', sort: SORT_POPULAR, pages: 1 },
+  { title: 'Phiêu lưu', q: '#nsfw #adventure', sort: SORT_POPULAR, pages: 1 },
+  { title: 'Kinh dị', q: '#nsfw #horror', sort: SORT_POPULAR, pages: 1 },
+  { title: 'Khoa học viễn tưởng', q: '#nsfw #scifi', sort: SORT_POPULAR, pages: 1 },
+  { title: 'Quái vật', q: '#nsfw #monster', sort: SORT_POPULAR, pages: 1 },
+  { title: 'Ác quỷ', q: '#nsfw #demon', sort: SORT_POPULAR, pages: 1 },
+  { title: 'BDSM', q: '#bdsm', sort: SORT_POPULAR, pages: 1 },
+  { title: 'Smut', q: '#smut', sort: SORT_POPULAR, pages: 1 },
+  { title: 'Erotic', q: '#erotic', sort: SORT_POPULAR, pages: 1 },
+  { title: 'Hentai', q: '#hentai', sort: SORT_POPULAR, pages: 1 },
+  { title: 'Boys\' Love', q: '#yaoi', sort: SORT_POPULAR, pages: 1 },
+  { title: 'Gay', q: '#nsfw #gay', sort: SORT_POPULAR, pages: 1 },
+  { title: 'Girls\' Love', q: '#yuri', sort: SORT_POPULAR, pages: 1 },
+  { title: 'Lesbian', q: '#nsfw #lesbian', sort: SORT_POPULAR, pages: 1 },
+  { title: 'LGBT', q: '#nsfw #lgbt', sort: SORT_POPULAR, pages: 1 },
+  { title: 'Furry', q: '#nsfw #furry', sort: SORT_POPULAR, pages: 1 }
 ];
 
-// Zangetsu shows a JS source's home rows as-is (no "see all"), so each row
-// takes two result pages. Four rows at a time, cut off after 20 s so the
-// app's 30 s getHome timeout never discards finished rows.
+// Zangetsu shows a JS source's home rows as-is (no "see all"). Five rows
+// at a time, cut off after 20 s so the app's 30 s getHome timeout never
+// discards finished rows.
 function getHome(opts) {
   var deadline = Date.now() + 20000;
   var rows = new Array(SHELVES.length), next = 0;
   function row(s) {
-    return _searchPage(s.q, s.sort, 1).then(function (a) {
-      return _searchPage(s.q, s.sort, 2).then(function (b) { return a.items.concat(b.items); },
-                                              function () { return a.items; });
+    return _searchPage(s.q, s.sort, 1, s.extra).then(function (a) {
+      if (s.pages < 2 || a.raw < 30) return a.items;
+      return _searchPage(s.q, s.sort, 2, s.extra).then(function (b) { return a.items.concat(b.items); },
+                                                       function () { return a.items; });
     });
   }
   function worker() {
@@ -122,7 +138,7 @@ function getHome(opts) {
       }) };
     }, function () {}).then(worker);
   }
-  return Promise.all([worker(), worker(), worker(), worker()]).then(function () {
+  return Promise.all([worker(), worker(), worker(), worker(), worker()]).then(function () {
     var out = rows.filter(function (r) { return r && r.items.length; });
     if (!out.length) throw new Error('ComicFury: không tải được danh sách');
     return out;

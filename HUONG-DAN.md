@@ -26,25 +26,30 @@ Các file `.js` phải nằm cùng thư mục với `index.json`, vì app ghép 
 ## Cài đặt từng nguồn (bấm vào nguồn → Settings)
 
 **MangaDex / MangaDex 18+** (hai nguồn dùng chung file `mangadex.js`, cài đặt riêng từng nguồn)
-- *Ngôn ngữ bản dịch*: MangaDex mặc định Tiếng Việt; MangaDex 18+ mặc định Tiếng Việt + English,
-  vì truyện 18+ có bản dịch tiếng Việt rất ít.
+- *Ngôn ngữ bản dịch* (19 lựa chọn): MangaDex mặc định Tiếng Việt; MangaDex 18+ mặc định
+  Tiếng Việt, English, Español (LATAM), Español, Português (BR), Français, Indonesia.
 - *Mức nội dung hiển thị*: MangaDex mặc định An toàn + Gợi cảm; MangaDex 18+ mặc định
-  Nhạy cảm (18+) + Người lớn (21+).
-- *Ưu tiên chương tiếng Việt* (mặc định bật): chương nào có bản tiếng Việt thì chỉ hiện bản đó,
-  bản tiếng Anh chỉ lấp các chương còn thiếu. Khi chọn từ 2 ngôn ngữ, chương được gắn 🇻🇳 hoặc [EN].
+  Gợi cảm + Nhạy cảm (18+) + Người lớn (21+).
+- *Mỗi chương chỉ giữ một bản* (mặc định bật): mỗi số chương chỉ hiện bản tốt nhất theo thứ tự
+  tiếng Việt → English → các ngôn ngữ còn lại. Chương được gắn 🇻🇳, [EN], [ES-LA]…
+- Đổi mặc định chỉ áp dụng khi chưa từng lưu cài đặt; đã lưu rồi thì vào Settings của nguồn
+  bấm khôi phục mặc định (hoặc tự tích chọn).
 - *Tiết kiệm dữ liệu*: dùng ảnh nén khi đi 4G.
 - Khi chọn tiếng Việt cùng ngôn ngữ khác, trang chủ có thêm 3 kệ **🇻🇳 … (tiếng Việt)** ở trên cùng.
   Truyện có bản dịch tiếng Việt hiện tên tiếng Việt (nếu có) và nhãn **🇻🇳 VI** ở góc bìa
   (cần bật huy hiệu trên ảnh bìa trong cài đặt của app).
-- MangaDex 18+ có bộ kệ thể loại riêng: Tình cảm, Công sở, Học đường, Harem, Quái vật…
+- MangaDex 18+ có 27 kệ thể loại riêng: Tình cảm, Công sở, Harem, Harem ngược, Quái vật, Ác quỷ,
+  Mafia, Tái sinh, Nữ phản diện, Chuyển giới, Giả trang, Tội phạm, Giật gân… (kệ cuối có thể
+  không kịp tải nếu mạng chậm; vẫn xem được bằng `#tên thể loại`).
 - Ở mọi mức, truyện gắn tag Loli/Shota đều bị loại. Nguồn không có tuỳ chọn tắt bộ lọc này.
 - Dán link `mangadex.org/title/...` vào ô tìm kiếm để mở thẳng truyện đó.
 - Không đặt `"nsfw": true` cho MangaDex 18+ trong `index.json`: app xếp nguồn có cờ nsfw vào
   nhóm NSFW của chế độ xem phim, nên nguồn sẽ không hiện ở chế độ Manga.
 
-**Oglaf (18+)**: kệ "Đọc trọn bộ" là cả bộ gộp làm một (mỗi truyện ngắn là một chương, từ cũ
-đến mới); các kệ khác mở từng truyện riêng. Tên truyện ở danh sách lấy theo đường dẫn (vd. "Goodideas"),
-mở truyện ra mới thấy tên thật và câu đùa ẩn của tác giả. Không bị nhà mạng chặn, không cần VPN.
+**ComicFury 18+**: 23 kệ (Phổ biến, Mới cập nhật, Đã hoàn thành, Tình cảm, Giả tưởng, BDSM, Smut,
+Hentai, BL, GL, Gay, Lesbian, LGBT, Furry…). Cài đặt: *Mức nội dung* (mặc định chỉ 21+) và *Ẩn truyện
+quá ngắn* (mặc định dưới 10 trang). Ô tìm kiếm nhận `*` và `#thẻ` tiếng Anh (`#romance`, `#bdsm`…).
+Truyện tiếng Anh, không bị nhà mạng chặn, không cần VPN.
 
 **Wikisource Tiếng Việt**: bìa lấy từ ảnh Wikisource, rồi đến ảnh bài Wikipedia; tác phẩm
 không có ảnh thì dùng bìa chữ tự tạo (tên truyện trên nền màu, qua placehold.co).

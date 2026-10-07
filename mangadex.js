@@ -11,8 +11,8 @@ var SOURCE_ID = 'mangadex';
 // and "mangadex-18" (adult only). The runtime id picks the defaults.
 var RUNTIME_ID = typeof __SOURCE_ID !== 'undefined' ? __SOURCE_ID : SOURCE_ID;
 var ADULT = /18/.test(RUNTIME_ID);
-var DEFAULT_LANGS = ADULT ? ['vi', 'en'] : ['vi'];
-var DEFAULT_RATINGS = ADULT ? ['erotica', 'pornographic'] : ['safe', 'suggestive'];
+var DEFAULT_LANGS = ADULT ? ['vi', 'en', 'es-la', 'es', 'pt-br', 'fr', 'id'] : ['vi'];
+var DEFAULT_RATINGS = ADULT ? ['suggestive', 'erotica', 'pornographic'] : ['safe', 'suggestive'];
 var SITE = 'https://mangadex.org';
 var API = 'https://api.mangadex.org';
 var UA = 'ZangetsuSources/1.0 (personal reader; https://github.com/Spyou/Zangetsu)';
@@ -30,7 +30,18 @@ var LANG_OPTIONS = [
   { value: 'fr', label: 'Français' },
   { value: 'id', label: 'Bahasa Indonesia' },
   { value: 'th', label: 'ไทย' },
-  { value: 'zh', label: '中文' }
+  { value: 'zh', label: '中文' },
+  { value: 'zh-hk', label: '中文 (香港)' },
+  { value: 'es', label: 'Español' },
+  { value: 'pt', label: 'Português' },
+  { value: 'de', label: 'Deutsch' },
+  { value: 'it', label: 'Italiano' },
+  { value: 'ru', label: 'Русский' },
+  { value: 'pl', label: 'Polski' },
+  { value: 'tr', label: 'Türkçe' },
+  { value: 'ar', label: 'العربية' },
+  { value: 'ko', label: '한국어' },
+  { value: 'ja', label: '日本語' }
 ];
 
 var RATING_OPTIONS = [
@@ -42,7 +53,7 @@ var RATING_OPTIONS = [
 
 function getInfo() {
   return { name: ADULT ? 'MangaDex 18+' : 'MangaDex', lang: 'multi', baseUrl: SITE,
-           logo: SITE + '/favicon.ico', type: 'manga', version: '1.3.1' };
+           logo: SITE + '/favicon.ico', type: 'manga', version: '1.4.0' };
 }
 
 function getSettings() {
@@ -50,7 +61,7 @@ function getSettings() {
     { key: 'langs', label: 'Ngôn ngữ bản dịch', type: 'multiEnum', default: DEFAULT_LANGS, options: LANG_OPTIONS },
     { key: 'ratings', label: 'Mức nội dung hiển thị', type: 'multiEnum',
       default: DEFAULT_RATINGS, options: RATING_OPTIONS },
-    { key: 'viFirst', label: 'Ưu tiên chương tiếng Việt (ẩn bản ngôn ngữ khác trùng số chương)',
+    { key: 'viFirst', label: 'Mỗi chương chỉ giữ một bản (ưu tiên tiếng Việt, rồi English)',
       type: 'bool', default: true },
     { key: 'dataSaver', label: 'Tiết kiệm dữ liệu (ảnh nén)', type: 'bool', default: false }
   ];
@@ -268,7 +279,12 @@ var GENRES = [
   ['Võ thuật', 'martial arts'], ['Bi kịch', 'tragedy'], ['Harem', 'harem'],
   ['Công sở', 'office workers'], ['Quái vật', 'monster girls'], ['Ma cà rồng', 'vampires'],
   ['Phép thuật', 'magic'], ['Trò chơi', 'video games'], ['Nấu ăn', 'cooking'],
-  ['Boys\' Love', 'boys\' love'], ['Girls\' Love', 'girls\' love']
+  ['Boys\' Love', 'boys\' love'], ['Girls\' Love', 'girls\' love'],
+  ['Harem ngược', 'reverse harem'], ['Mafia', 'mafia'], ['Ác quỷ', 'demons'], ['Tái sinh', 'reincarnation'],
+  ['Nữ phản diện', 'villainess'], ['Chuyển giới', 'genderswap'], ['Giả trang', 'crossdressing'],
+  ['Tội phạm', 'crime'], ['Giật gân', 'thriller'], ['Du hành thời gian', 'time travel'],
+  ['Quân đội', 'military'], ['Y khoa', 'medical'], ['Người ngoài hành tinh', 'aliens'],
+  ['Ma quỷ', 'ghosts'], ['Sinh tồn', 'survival'], ['Ninja', 'ninja']
 ];
 
 function _norm(s) {
@@ -303,8 +319,10 @@ var VI_SHELVES = [
 // Genre rows for the 18+ install — the themes adult titles actually use,
 // instead of the all-ages list (sports, cooking…).
 var ADULT_GENRES = ['Tình cảm', 'Công sở', 'Hài hước', 'Chính kịch', 'Giả tưởng',
-                    'Xuyên không', 'Harem', 'Quái vật', 'Ma cà rồng', 'Đời thường', 'Siêu nhiên',
-                    'Tâm lý', 'Phiêu lưu', 'Boys\' Love', 'Girls\' Love'];
+                    'Xuyên không', 'Harem', 'Harem ngược', 'Quái vật', 'Ma cà rồng', 'Ác quỷ',
+                    'Đời thường', 'Siêu nhiên', 'Tâm lý', 'Phiêu lưu', 'Hành động', 'Mafia',
+                    'Tái sinh', 'Nữ phản diện', 'Chuyển giới', 'Giả trang', 'Tội phạm', 'Giật gân',
+                    'Kinh dị', 'Lịch sử', 'Boys\' Love', 'Girls\' Love'];
 
 function _homeGenres() {
   if (!ADULT) return GENRES.slice(0, HOME_GENRES);
@@ -358,7 +376,7 @@ function getHome(opts) {
       return jobs[i].run().then(function (items) { rows[i] = { title: jobs[i].title, items: items }; },
                                 function () {}).then(worker);
     }
-    return Promise.all([worker(), worker(), worker()]).then(function () {
+    return Promise.all([worker(), worker(), worker(), worker()]).then(function () {
       var out = rows.filter(function (r) { return r && r.items.length; });
       if (!out.length) return _list('followedCount', 1).then(function () { return out; }); // surface the error
       return out;
@@ -450,14 +468,21 @@ function _chapters(id) {
       return !a.externalUrl && (a.pages == null || a.pages > 0);
     });
     var multi = _langs().length > 1;
-    // With "ưu tiên tiếng Việt" on, a chapter number that has a Vietnamese
-    // release shows only that; other languages just fill the gaps.
-    if (multi && _langs().indexOf('vi') !== -1 && _setting('viFirst', true) === true) {
-      var viNums = {};
-      rows.forEach(function (c) { if (c.attributes.translatedLanguage === 'vi') viNums[c.attributes.chapter || '_'] = true; });
-      rows = rows.filter(function (c) {
-        return c.attributes.translatedLanguage === 'vi' || !viNums[c.attributes.chapter || '_'];
+    // With the preference on, each chapter number keeps only its best
+    // language — Vietnamese, then English, then the rest in settings order —
+    // so seven languages don't list every chapter seven times.
+    if (multi && _setting('viFirst', true) === true) {
+      var order = ['vi', 'en'].concat(_langs().filter(function (l) { return l !== 'vi' && l !== 'en'; }));
+      var rank = function (c) {
+        var i = order.indexOf(c.attributes.translatedLanguage);
+        return i === -1 ? order.length : i;
+      };
+      var best = {};
+      rows.forEach(function (c) {
+        var k = c.attributes.chapter || '_';
+        if (best[k] == null || rank(c) < best[k]) best[k] = rank(c);
       });
+      rows = rows.filter(function (c) { return rank(c) === best[c.attributes.chapter || '_']; });
     }
     var count = {};
     rows.forEach(function (c) { var k = c.attributes.chapter || '_'; count[k] = (count[k] || 0) + 1; });

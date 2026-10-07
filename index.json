@@ -5,7 +5,7 @@
     {
       "id": "mangadex",
       "name": "MangaDex",
-      "version": "1.3.1",
+      "version": "1.4.0",
       "type": "manga",
       "lang": "multi",
       "file": "mangadex.js",
@@ -15,7 +15,7 @@
     {
       "id": "mangadex-18",
       "name": "MangaDex 18+",
-      "version": "1.3.1",
+      "version": "1.4.0",
       "type": "manga",
       "lang": "multi",
       "file": "mangadex.js",
@@ -25,7 +25,7 @@
     {
       "id": "comicfury",
       "name": "ComicFury 18+",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "type": "manga",
       "lang": "en",
       "file": "comicfury.js",
