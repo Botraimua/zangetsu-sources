@@ -8,7 +8,7 @@ JavaScript riêng của Zangetsu**. Bộ này viết theo đúng định dạng 
 |---|---|---|---|
 | **MangaDex** | Truyện tranh | Manga/manhwa do nhóm dịch đăng, mọi lứa tuổi; mặc định tiếng Việt | Logic: có (dữ liệu giả lập). Mạng thật: **chưa**, vì nhà mạng VN chặn MangaDex |
 | **MangaDex 18+** | Truyện tranh | Chỉ truyện 18+/21+; mặc định tiếng Việt + English | Như trên |
-| **Oglaf (18+)** | Truyện tranh | Webcomic 18+ tiếng Anh (giả tưởng, hài người lớn) do chính tác giả Trudy Cooper & Doug Bayne đăng miễn phí; ~870 truyện ngắn | Có |
+| **ComicFury 18+** | Truyện tranh | Webcomic người lớn tiếng Anh do chính tác giả đăng miễn phí trên ComicFury; mặc định chỉ 21+, ẩn truyện dưới 10 trang | Có |
 | **Wikisource Tiếng Việt** | Truyện chữ | Văn học VN thuộc phạm vi công cộng: Nam Cao, Hồ Biểu Chánh, Tam quốc, Truyện Kiều… | Có |
 | **Project Gutenberg (sách ngoại văn)** | Truyện chữ | 70.000+ sách kinh điển tiếng Anh, Pháp, Đức, Trung… (**không có sách tiếng Việt**) | Có |
 

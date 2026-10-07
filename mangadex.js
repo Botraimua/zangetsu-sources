@@ -18,7 +18,9 @@ var API = 'https://api.mangadex.org';
 var UA = 'ZangetsuSources/1.0 (personal reader; https://github.com/Spyou/Zangetsu)';
 var PAGE_SIZE = 30;
 var FEED_LIMIT = 500;   // API maximum for /manga/{id}/feed
-var BLOCKED_TAGS = ['loli', 'shota'];
+// The 18+ install also drops School Life: in sexual content that tag mostly
+// means high-school characters, i.e. minors.
+var BLOCKED_TAGS = ADULT ? ['loli', 'shota', 'school life'] : ['loli', 'shota'];
 
 var LANG_OPTIONS = [
   { value: 'vi', label: 'Tiếng Việt' },
@@ -40,7 +42,7 @@ var RATING_OPTIONS = [
 
 function getInfo() {
   return { name: ADULT ? 'MangaDex 18+' : 'MangaDex', lang: 'multi', baseUrl: SITE,
-           logo: SITE + '/favicon.ico', type: 'manga', version: '1.3.0' };
+           logo: SITE + '/favicon.ico', type: 'manga', version: '1.3.1' };
 }
 
 function getSettings() {
@@ -300,7 +302,7 @@ var VI_SHELVES = [
 
 // Genre rows for the 18+ install — the themes adult titles actually use,
 // instead of the all-ages list (sports, cooking…).
-var ADULT_GENRES = ['Tình cảm', 'Công sở', 'Học đường', 'Hài hước', 'Chính kịch', 'Giả tưởng',
+var ADULT_GENRES = ['Tình cảm', 'Công sở', 'Hài hước', 'Chính kịch', 'Giả tưởng',
                     'Xuyên không', 'Harem', 'Quái vật', 'Ma cà rồng', 'Đời thường', 'Siêu nhiên',
                     'Tâm lý', 'Phiêu lưu', 'Boys\' Love', 'Girls\' Love'];
 
