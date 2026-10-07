@@ -1,54 +1,54 @@
 {
-    "name":  "Nguá»“n Ä‘á»c cá»§a chá»‹ Láº­p",
-    "description":  "Truyá»‡n tranh (MangaDex) vÃ  truyá»‡n chá»¯ (Wikisource tiáº¿ng Viá»‡t, Project Gutenberg) cho Zangetsu â€” cháº¡y Ä‘Æ°á»£c trÃªn iOS.",
-    "sources":  [
-                    {
-                        "id":  "mangadex",
-                        "name":  "MangaDex",
-                        "version":  "1.3.1",
-                        "type":  "manga",
-                        "lang":  "multi",
-                        "file":  "mangadex.js",
-                        "logo":  "https://mangadex.org/favicon.ico",
-                        "nsfw":  false
-                    },
-                    {
-                        "id":  "mangadex-18",
-                        "name":  "MangaDex 18+",
-                        "version":  "1.3.1",
-                        "type":  "manga",
-                        "lang":  "multi",
-                        "file":  "mangadex.js",
-                        "logo":  "https://mangadex.org/favicon.ico",
-                        "nsfw":  false
-                    },
-                    {
-                        "id":  "comicfury",
-                        "name":  "ComicFury 18+",
-                        "version":  "1.0.0",
-                        "type":  "manga",
-                        "lang":  "en",
-                        "file":  "comicfury.js",
-                        "logo":  "https://comicfury.com/images/cf-diamond.png",
-                        "nsfw":  false
-                    },
-                    {
-                        "id":  "wikisource-vi",
-                        "name":  "Wikisource Tiáº¿ng Viá»‡t",
-                        "version":  "1.2.0",
-                        "type":  "novel",
-                        "lang":  "vi",
-                        "file":  "wikisource-vi.js",
-                        "logo":  "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Wikisource-logo.svg/200px-Wikisource-logo.svg.png"
-                    },
-                    {
-                        "id":  "gutenberg",
-                        "name":  "Project Gutenberg (sÃ¡ch ngoáº¡i vÄƒn)",
-                        "version":  "1.1.0",
-                        "type":  "novel",
-                        "lang":  "en",
-                        "file":  "gutenberg.js",
-                        "logo":  "https://www.gutenberg.org/gutenberg/pg-logo-129x80.png"
-                    }
-                ]
+  "name": "Nguồn đọc của chị Lập",
+  "description": "Truyện tranh (MangaDex, ComicFury) và truyện chữ (Wikisource tiếng Việt, Project Gutenberg) cho Zangetsu — chạy được trên iOS.",
+  "sources": [
+    {
+      "id": "mangadex",
+      "name": "MangaDex",
+      "version": "1.3.1",
+      "type": "manga",
+      "lang": "multi",
+      "file": "mangadex.js",
+      "logo": "https://mangadex.org/favicon.ico",
+      "nsfw": false
+    },
+    {
+      "id": "mangadex-18",
+      "name": "MangaDex 18+",
+      "version": "1.3.1",
+      "type": "manga",
+      "lang": "multi",
+      "file": "mangadex.js",
+      "logo": "https://mangadex.org/favicon.ico",
+      "nsfw": false
+    },
+    {
+      "id": "comicfury",
+      "name": "ComicFury 18+",
+      "version": "1.0.0",
+      "type": "manga",
+      "lang": "en",
+      "file": "comicfury.js",
+      "logo": "https://comicfury.com/images/cf-diamond.png",
+      "nsfw": false
+    },
+    {
+      "id": "wikisource-vi",
+      "name": "Wikisource Tiếng Việt",
+      "version": "1.2.0",
+      "type": "novel",
+      "lang": "vi",
+      "file": "wikisource-vi.js",
+      "logo": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4c/Wikisource-logo.svg/200px-Wikisource-logo.svg.png"
+    },
+    {
+      "id": "gutenberg",
+      "name": "Project Gutenberg (sách ngoại văn)",
+      "version": "1.1.0",
+      "type": "novel",
+      "lang": "en",
+      "file": "gutenberg.js",
+      "logo": "https://www.gutenberg.org/gutenberg/pg-logo-129x80.png"
+    }
+  ]
 }
